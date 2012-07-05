@@ -96,11 +96,11 @@ MODULES=$(LUCENE_SRC)/modules
 #NUM_FILES=3
 
 # Linux     (Ubuntu 8.10 64-bit, Python 2.5.2, OpenJDK 1.6, setuptools 0.6c9)
-#PREFIX_PYTHON=/usr
-#ANT=ant
-#PYTHON=$(PREFIX_PYTHON)/bin/python
-#JCC=$(PYTHON) -m jcc --shared
-#NUM_FILES=3
+PREFIX_PYTHON=/usr
+ANT=ant
+PYTHON=$(PREFIX_PYTHON)/bin/python
+JCC=$(PYTHON) -m jcc --shared
+NUM_FILES=3
 
 # FreeBSD
 #PREFIX_PYTHON=/usr
@@ -174,7 +174,6 @@ default: all
 $(LUCENE_SRC):
 	svn $(SVNOP) --depth files -r $(LUCENE_SVN_VER) $(LUCENE_SVN) $(LUCENE_SRC)
 	svn $(SVNOP) -r $(LUCENE_SVN_VER) $(LUCENE_SVN)/lucene $(LUCENE_SRC)/lucene
-	svn $(SVNOP) -r $(LUCENE_SVN_VER) $(LUCENE_SVN)/modules $(LUCENE_SRC)/modules
 
 sources: $(LUCENE_SRC)
 
@@ -194,22 +193,22 @@ $(LUCENE_JAR): $(LUCENE)
 	cd $(LUCENE); $(ANT) -Dversion=$(LUCENE_VER)
 
 $(ANALYZERS_JAR): $(LUCENE_JAR)
-	cd $(MODULES); $(ANT) -Dversion=$(LUCENE_VER) compile
+	cd $(LUCENE)/analysis; $(ANT) -Dversion=$(LUCENE_VER) compile
 
 $(MEMORY_JAR): $(LUCENE_JAR)
-	cd $(LUCENE)/contrib/memory; $(ANT) -Dversion=$(LUCENE_VER)
+	cd $(LUCENE)/memory; $(ANT) -Dversion=$(LUCENE_VER)
 
 $(HIGHLIGHTER_JAR): $(LUCENE_JAR)
-	cd $(LUCENE)/contrib/highlighter; $(ANT) -Dversion=$(LUCENE_VER)
+	cd $(LUCENE)/highlighter; $(ANT) -Dversion=$(LUCENE_VER)
 
 $(QUERIES_JAR): $(LUCENE_JAR)
-	cd $(LUCENE)/contrib/queries; $(ANT) -Dversion=$(LUCENE_VER)
+	cd $(LUCENE)/queries; $(ANT) -Dversion=$(LUCENE_VER)
 
 $(EXTENSIONS_JAR): $(LUCENE_JAR)
 	$(ANT) -f extensions.xml -Dlucene.dir=$(LUCENE_SRC)
 
 $(SMARTCN_JAR): $(LUCENE_JAR)
-	cd $(MODULES)/analysis/smartcn; $(ANT) -Dversion=$(LUCENE_VER)
+	cd $(LUCENE)/analysis/smartcn; $(ANT) -Dversion=$(LUCENE_VER)
 
 $(SPATIAL_JAR): $(LUCENE_JAR)
 	cd $(LUCENE)/contrib/spatial; $(ANT) -Dversion=$(LUCENE_VER)
@@ -221,7 +220,7 @@ jars: $(JARS)
 
 ifneq ($(ICUPKG),)
 
-ICURES= $(MODULES)/analysis/icu/src/resources
+ICURES= $(LUCENE)/analysis/icu/src/resources
 RESOURCES=--resources $(ICURES)
 ENDIANNESS:=$(shell $(PYTHON) -c "import struct; print struct.pack('h', 1) == '\000\001' and 'b' or 'l'")
 
@@ -293,12 +292,10 @@ all: sources jars resources compile
 
 clean:
 	if test -f $(LUCENE)/build.xml; then cd $(LUCENE); $(ANT) clean; fi
-	if test -f $(MODULES)/build.xml; then cd $(MODULES); $(ANT) clean; fi
 	rm -rf $(LUCENE)/build build
 
 realclean:
 	if test ! -d $(LUCENE)/.svn; then rm -rf $(LUCENE) lucene; else rm -rf $(LUCENE)/build; fi
-	if test ! -d $(MODULES)/.svn; then rm -rf $(MODULES) modules; fi
 	rm -rf build samples/LuceneInAction/index
 
 OS=$(shell uname)
