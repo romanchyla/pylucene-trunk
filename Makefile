@@ -99,7 +99,7 @@ MODULES=$(LUCENE_SRC)/modules
 PREFIX_PYTHON=/usr
 ANT=ant
 PYTHON=$(PREFIX_PYTHON)/bin/python
-JCC=$(PYTHON) -m jcc --shared
+JCC=$(PYTHON) -m jcc.__main__ --shared
 NUM_FILES=3
 
 # FreeBSD
@@ -138,6 +138,8 @@ JARS+=$(ANALYZERS_JAR)          # many language analyzers
 JARS+=$(MEMORY_JAR)             # single-document memory index
 JARS+=$(HIGHLIGHTER_JAR)        # needs memory contrib
 JARS+=$(EXTENSIONS_JAR)         # needs highlighter contrib
+JARS+=$(QUERYPARSER_JAR)        # query parser
+JARS+=$(SANDBOX_JAR)             # needed by query parser
 JARS+=$(QUERIES_JAR)            # regex and other contrib queries
 #JARS+=$(SMARTCN_JAR)           # smart chinese analyzer
 #JARS+=$(SPATIAL_JAR)           # spatial lucene
@@ -155,13 +157,15 @@ endif
 
 DEFINES=-DPYLUCENE_VER="\"$(VERSION)\"" -DLUCENE_VER="\"$(LUCENE_VER)\""
 
-LUCENE_JAR=$(LUCENE)/build/lucene-core-$(LUCENE_VER).jar
-ANALYZERS_JAR=$(MODULES)/analysis/build/common/lucene-analyzers-common-$(LUCENE_VER).jar
-HIGHLIGHTER_JAR=$(LUCENE)/build/contrib/highlighter/lucene-highlighter-$(LUCENE_VER).jar
-MEMORY_JAR=$(LUCENE)/build/contrib/memory/lucene-memory-$(LUCENE_VER).jar
-QUERIES_JAR=$(LUCENE)/build/contrib/queries/lucene-queries-$(LUCENE_VER).jar
+LUCENE_JAR=$(LUCENE)/build/core/lucene-core-$(LUCENE_VER).jar
+ANALYZERS_JAR=$(LUCENE)/build/analysis/common/lucene-analyzers-common-$(LUCENE_VER).jar
+HIGHLIGHTER_JAR=$(LUCENE)/build/highlighter/lucene-highlighter-$(LUCENE_VER).jar
+MEMORY_JAR=$(LUCENE)/build/memory/lucene-memory-$(LUCENE_VER).jar
+QUERIES_JAR=$(LUCENE)/build/queries/lucene-queries-$(LUCENE_VER).jar
+QUERYPARSER_JAR=$(LUCENE)/build/queryparser/lucene-queryparser-$(LUCENE_VER).jar
+SANDBOX_JAR=$(LUCENE)/build/sandbox/lucene-sandbox-$(LUCENE_VER).jar
 EXTENSIONS_JAR=build/jar/extensions.jar
-SMARTCN_JAR=$(MODULES)/analysis/build/smartcn/lucene-analyzers-smartcn-$(LUCENE_VER).jar
+SMARTCN_JAR=$(LUCENE)/build/analysis/smartcn/lucene-analyzers-smartcn-$(LUCENE_VER).jar
 SPATIAL_JAR=$(LUCENE)/build/contrib/spatial/lucene-spatial-$(LUCENE_VER).jar
 
 ICUPKG:=$(shell which icupkg)
@@ -203,6 +207,12 @@ $(HIGHLIGHTER_JAR): $(LUCENE_JAR)
 
 $(QUERIES_JAR): $(LUCENE_JAR)
 	cd $(LUCENE)/queries; $(ANT) -Dversion=$(LUCENE_VER)
+
+$(QUERYPARSER_JAR): $(LUCENE_JAR)
+    cd $(LUCENE)/queryparser; $(ANT) -Dversion=$(LUCENE_VER)	
+
+$(SANDBOX_JAR): $(LUCENE_JAR)
+    cd $(LUCENE)/sandbox; $(ANT) -Dversion=$(LUCENE_VER)
 
 $(EXTENSIONS_JAR): $(LUCENE_JAR)
 	$(ANT) -f extensions.xml -Dlucene.dir=$(LUCENE_SRC)
@@ -253,11 +263,11 @@ GENERATE=$(JCC) $(foreach jar,$(JARS),--jar $(jar)) \
            --package java.io java.io.StringReader \
                              java.io.InputStreamReader \
                              java.io.FileInputStream \
-           --exclude org.apache.lucene.queryParser.Token \
-           --exclude org.apache.lucene.queryParser.TokenMgrError \
-           --exclude org.apache.lucene.queryParser.QueryParserTokenManager \
-           --exclude org.apache.lucene.queryParser.ParseException \
-           --exclude org.apache.lucene.search.regex.JakartaRegexpCapabilities \
+           --exclude org.apache.lucene.queryparser.classic.Token \
+           --exclude org.apache.lucene.queryparser.classic.TokenMgrError \
+           --exclude org.apache.lucene.queryparser.classic.QueryParserTokenManager \
+           --exclude org.apache.lucene.queryparser.classic.ParseException \
+           --exclude org.apache.lucene.sandbox.queries.regex.JakartaRegexpCapabilities \
            --exclude org.apache.regexp.RegexpTunnel \
            --python lucene \
            --mapping org.apache.lucene.document.Document 'get:(Ljava/lang/String;)Ljava/lang/String;' \
@@ -269,6 +279,8 @@ GENERATE=$(JCC) $(foreach jar,$(JARS),--jar $(jar)) \
            --module python/ICUNormalizer2Filter.py \
            --module python/ICUFoldingFilter.py \
            --module python/ICUTransformFilter.py \
+           --reserved mutable \
+           --reserved token \
            $(RESOURCES) \
            --files $(NUM_FILES)
 
@@ -277,6 +289,7 @@ generate: jars
 
 compile: jars
 	$(GENERATE) --build $(DEBUG_OPT)
+
 
 install: jars
 	$(GENERATE) --install $(DEBUG_OPT) $(INSTALL_OPT)
