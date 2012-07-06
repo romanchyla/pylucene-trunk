@@ -35,7 +35,7 @@ class TestRegexQuery(TestCase):
 
     def tearDown(self):
 
-        self.searcher.close()
+        self.del searcher
 
     def newTerm(self, value):
   

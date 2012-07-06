@@ -41,4 +41,4 @@ if __name__ == '__main__':
     searcher = IndexSearcher(directory, True)
     analyzer = StandardAnalyzer(Version.LUCENE_CURRENT)
     run(searcher, analyzer)
-    searcher.close()
+    del searcher

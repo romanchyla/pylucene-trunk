@@ -85,7 +85,7 @@ class FuzzyQueryTestCase(TestCase):
         topDocs = searcher.search(query, 50)
         self.assertEqual(0, topDocs.totalHits)
 
-        searcher.close()
+        del searcher
         directory.close()
 
     def testDefaultFuzzinessLong(self):
@@ -124,7 +124,7 @@ class FuzzyQueryTestCase(TestCase):
         topDocs = searcher.search(query, 50)
         self.assertEqual(1, topDocs.totalHits)
 
-        searcher.close()
+        del searcher
         directory.close()
 
 

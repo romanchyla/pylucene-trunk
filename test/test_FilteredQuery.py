@@ -62,7 +62,7 @@ class FilteredQueryTestCase(TestCase):
         writer.optimize()
         writer.close()
 
-        self.searcher = IndexSearcher(self.directory, True)
+        self.searcher = self.getSearcher()
         self.query = TermQuery(Term("field", "three"))
 
         class filter(PythonFilter):
@@ -76,7 +76,7 @@ class FilteredQueryTestCase(TestCase):
 
     def tearDown(self):
 
-        self.searcher.close()
+        self.del searcher
         self.directory.close()
 
     def testFilteredQuery(self):

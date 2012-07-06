@@ -274,6 +274,7 @@ GENERATE=$(JCC) $(foreach jar,$(JARS),--jar $(jar)) \
            --mapping java.util.Properties 'getProperty:(Ljava/lang/String;)Ljava/lang/String;' \
            --sequence java.util.AbstractList 'size:()I' 'get:(I)Ljava/lang/Object;' \
            --rename org.apache.lucene.search.highlight.SpanScorer=HighlighterSpanScorer \
+           --rename org.apache.lucene.queryparser.surround.parser.QueryParser=SurroundQueryParser \
            --version $(LUCENE_VER) \
            --module python/collections.py \
            --module python/ICUNormalizer2Filter.py \

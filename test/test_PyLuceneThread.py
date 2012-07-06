@@ -99,7 +99,7 @@ class PyLuceneThreadTestCase(TestCase):
             getVMEnv().attachCurrentThread()
         time.sleep(0.5)
 
-        searcher = IndexSearcher(self.directory, True)
+        searcher = self.getSearcher()
         try:
             self.query = PhraseQuery()
             for word, count in self.testData[0:runCount]:
@@ -111,7 +111,7 @@ class PyLuceneThreadTestCase(TestCase):
                 self.totalQueries += 1
                 self.lock.release()
         finally:
-            searcher.close()
+            del searcher
 
 
 if __name__ == "__main__":

@@ -72,7 +72,7 @@ class BerkeleyDbSearcher(object):
 
             topDocs = searcher.search(TermQuery(Term("contents", "fox")), 50)
             print topDocs.totalHits, "document(s) found"
-            searcher.close()
+            del searcher
         except:
             if txn is not None:
                 txn.abort()

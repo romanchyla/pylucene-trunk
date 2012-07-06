@@ -1,0 +1,4 @@
+ft = FieldType(StringField.TYPE_STORED)
+
+It should copy the attributes of the reference field, but instead it
+returns an empty FieldType. So the copying doesn't work
