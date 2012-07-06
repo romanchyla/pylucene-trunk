@@ -15,8 +15,9 @@
 import os
 
 from lucene import \
-    Document, Field, IndexWriter, StandardAnalyzer, NumericField, \
-    SimpleDateFormat, Version, SimpleFSDirectory, File, DateTools, DateField
+    Document, Field, IndexWriter, StandardAnalyzer, IntField, \
+    SimpleDateFormat, Version, SimpleFSDirectory, File, DateTools, \
+    IndexWriterConfig, LogMergePolicy
 
 # date culled from LuceneInAction.zip archive from Manning site
 samplesModified = SimpleDateFormat('yyyy-MM-dd').parse('2004-12-02')
@@ -27,17 +28,20 @@ class TestDataDocumentHandler(object):
     def createIndex(cls, dataDir, indexDir, useCompound):
 
         indexDir = SimpleFSDirectory(File(indexDir))
-        writer = IndexWriter(indexDir,
-                             StandardAnalyzer(Version.LUCENE_CURRENT), True,
-                             IndexWriter.MaxFieldLength.UNLIMITED)
-        writer.setUseCompoundFile(useCompound)
+        writer = IndexWriter(indexDir, IndexWriterConfig(Version.LUCENE_CURRENT,
+                             StandardAnalyzer(Version.LUCENE_CURRENT)))
+        config = writer.getConfig()
+        mp = config.getMergePolicy()
+        
+        if (LogMergePolicy.instance_(mp)):
+            mp.setUseCompoundFile(useCompound)
 
         for dir, dirnames, filenames in os.walk(dataDir):
             for filename in filenames:
                 if filename.endswith('.properties'):
                     cls.indexFile(writer, os.path.join(dir, filename), dataDir)
 
-        writer.optimize()
+        writer.commit()
         writer.close()
 
     def indexFile(cls, writer, path, baseDir):
@@ -72,13 +76,24 @@ class TestDataDocumentHandler(object):
         print category.encode('utf-8')
         print "---------"
 
+        ft_analyzed = FieldType(TextField.TYPE_STORED)
+        ft_analyzed.setIndexed(True)
+        ft_analyzed.setStored(True)
+        ft_analyzed.setTokenized(True)
+        ft_analyzed.setStoreTermVectorOffsets(True)
+        ft_analyzed.setStoreTermVectorPositions(True)
+        ft_analyzed.setIndexOptions(FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS)
+        
+        ft_not_analyzed = FieldType(StringField.TYPE_STORED);
+        ft.setOmitNorms(False);
+        
         doc.add(Field("isbn", isbn,
-                      Field.Store.YES, Field.Index.NOT_ANALYZED))
+                      ft_not_analyzed))
         doc.add(Field("category", category,
-                      Field.Store.YES, Field.Index.NOT_ANALYZED))
+                      ft_not_analyzed))
         doc.add(Field("title", title,
-                      Field.Store.YES, Field.Index.ANALYZED,
-                      Field.TermVector.WITH_POSITIONS_OFFSETS))
+                      ft))  #Field.Store.YES, Field.Index.ANALYZED,
+                            #Field.TermVector.WITH_POSITIONS_OFFSETS
         doc.add(Field("title2", title.lower(),
                       Field.Store.YES, Field.Index.NOT_ANALYZED_NO_NORMS,
                       Field.TermVector.WITH_POSITIONS_OFFSETS))
@@ -96,13 +111,11 @@ class TestDataDocumentHandler(object):
         doc.add(Field("subject", subject,
                       Field.Store.NO, Field.Index.ANALYZED,
                       Field.TermVector.WITH_POSITIONS_OFFSETS))
-        doc.add(NumericField("pubmonth",
-                             Field.Store.YES,
-                             True).setIntValue(int(pubmonth)))
+        doc.add(IntField("pubmonth", int(pubmonth), Field.Store.YES))
 
         d = DateTools.stringToDate(pubmonth)
         d = int(d.getTime() / (1000 * 3600 * 24.0))
-        doc.add(NumericField("pubmonthAsDay").setIntValue(d))
+        doc.add(IntField("pubmonthAsDay", d, Field.Store.NO))
 
         doc.add(Field("contents", ' '.join([title, subject, author, category]),
                       Field.Store.NO, Field.Index.ANALYZED,
@@ -110,7 +123,7 @@ class TestDataDocumentHandler(object):
 
         doc.add(Field("path", path,
                       Field.Store.YES, Field.Index.NOT_ANALYZED))
-        doc.add(Field("modified", DateField.dateToString(samplesModified),
+        doc.add(Field("modified", DateTools.dateToString(samplesModified),
                       Field.Store.YES, Field.Index.NOT_ANALYZED))
 
         writer.addDocument(doc)
