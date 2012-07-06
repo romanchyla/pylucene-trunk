@@ -64,7 +64,7 @@ class SimilarityTestCase(TestCase):
     
         writer.addDocument(d1)
         writer.addDocument(d2)
-        writer.optimize()
+        writer.commit()
         writer.close()
 
         searcher = IndexSearcher(store, True)

@@ -45,7 +45,7 @@ class SynonymAnalyzerTest(TestCase):
 
     def tearDown(self):
 
-        self.del searcher
+        del self.searcher
 
     def testJumps(self):
 

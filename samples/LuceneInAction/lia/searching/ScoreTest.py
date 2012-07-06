@@ -81,7 +81,7 @@ class ScoreTest(LiaTestCase):
             doc.add(field)
             writer.addDocument(doc)
 
-        writer.optimize()
+        writer.commit()
         writer.close()
 
     def testWildcard(self):

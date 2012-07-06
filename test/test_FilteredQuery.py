@@ -59,7 +59,7 @@ class FilteredQueryTestCase(TestCase):
                       
         writer.addDocument(doc)
 
-        writer.optimize()
+        writer.commit()
         writer.close()
 
         self.searcher = self.getSearcher()
@@ -76,7 +76,7 @@ class FilteredQueryTestCase(TestCase):
 
     def tearDown(self):
 
-        self.del searcher
+        del self.searcher
         self.directory.close()
 
     def testFilteredQuery(self):

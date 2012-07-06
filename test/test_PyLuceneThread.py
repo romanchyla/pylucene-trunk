@@ -48,7 +48,7 @@ class PyLuceneThreadTestCase(TestCase):
         writer.addDocument(doc2)
         writer.addDocument(doc3)
         writer.addDocument(doc4)
-        writer.optimize()
+        writer.commit()
         writer.close()
 
         self.testData = [('one',2), ('two',1), ('three', 1), ('five', 0)] * 500

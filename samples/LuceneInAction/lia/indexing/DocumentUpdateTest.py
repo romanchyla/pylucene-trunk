@@ -40,7 +40,7 @@ class DocumentUpdateTest(BaseIndexingTestCase):
         doc.add(Field("city", "St. Petersburg",
                       Field.Store.YES, Field.Index.ANALYZED))
         writer.addDocument(doc)
-        writer.optimize()
+        writer.commit()
         writer.close()
 
         self.assertEqual(0, self.getHitCount("city", "Amsterdam"))

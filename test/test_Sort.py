@@ -97,7 +97,7 @@ class SortTestCase(TestCase):
                                   Field.Index.NOT_ANALYZED))
                 doc.setBoost(2.0)  # produce some scores above 1.0
                 writer.addDocument(doc)
-        # writer.optimize()
+        # writer.commit()
         writer.close()
         s = IndexSearcher(indexStore, True)
         s.setDefaultFieldSortScoring(True, True)
@@ -131,7 +131,7 @@ class SortTestCase(TestCase):
             writer.setMaxBufferedDocs(self.getRandomNumber(2, 12))
             writer.addDocument(doc)
       
-        # writer.optimize()
+        # writer.commit()
         # print writer.getSegmentCount()
         writer.close()
 
