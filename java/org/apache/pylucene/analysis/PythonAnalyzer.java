@@ -16,7 +16,6 @@
 package org.apache.pylucene.analysis;
 
 import org.apache.lucene.analysis.Analyzer;
-
 import java.io.Reader;
 
 public class PythonAnalyzer extends Analyzer {

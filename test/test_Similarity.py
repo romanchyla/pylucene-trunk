@@ -18,7 +18,7 @@ from lucene import *
 
 class SimpleSimilarity(PythonSimilarity):
 
-    def lengthNorm(self, field, numTerms):
+    def computeNorm(self, field, state):
         return 1.0
 
     def queryNorm(self, sumOfSquaredWeights):

@@ -95,7 +95,7 @@ PRIMITIVES = { 'boolean': 'Z',
                'void': 'V' }
 
 RESERVED = set(['delete', 'and', 'or', 'not', 'xor', 'union', 'register',
-                'const', 'bool', 'operator', 'typeof', 'asm',
+                'const', 'bool', 'operator', 'typeof', 'asm', 'mutable',
                 'NULL', 'DOMAIN', 'IGNORE'])
 
 RENAME_METHOD_SUFFIX = '_'
@@ -602,9 +602,10 @@ def jcc(args):
             done.update(importset)
             if moduleName:
                 for cls in importset:
-                    name = cls.getName().split_pkg('.')[-1]
+                    name = getPythonicClassName(cls.getName(), renames, pythonNames)
                     if name in pythonNames:
-                        raise ValueError, (cls, 'python class name already in use, use --rename', name, pythonNames[name])
+                        raise ValueError, ('Python class name \'%s\' already in use by: %s;\n use: --rename %s=<someNewName>' % 
+                            (name, pythonNames[name].getName(), cls.getName(), get_substitution_help(cls.getName())))
                     else:
                         pythonNames[name] = cls
 
@@ -639,9 +640,10 @@ def jcc(args):
                                          methodNames, fields, instanceFields, 
                                          declares, typeset)
                 if moduleName:
-                    name = renames.get(className) or names[-1]
+                    name = getPythonicClassName(className, renames, pythonNames)
                     if name in pythonNames:
-                        raise ValueError, (cls, 'python class name already in use, use --rename', name, pythonNames[name])
+                        raise ValueError, ('Python class name \'%s\' already in use by: %s;\n use: --rename %s=<someNewName> %s' 
+                            % (name, pythonNames[name].getName(), cls.getName(), get_substitution_help(className)))
                     else:
                         pythonNames[name] = cls
                     python(env, out_h, out_cpp,
@@ -1197,6 +1199,76 @@ def code(env, out, cls, superCls, constructors, methods, protectedMethods,
 
     return names, superNames
 
+
+def getPythonicClassName(clsName, renames, alreadyRegistered):
+        
+    elements = clsName.split('.')
+    lastName = elements[-1]
+    codes = getSubstitutionCodes(elements)
+    
+    if clsName in renames:
+        return renames[clsName] % codes
+        
+    # match for foo.bar%(name)s
+    for k,v in renames.items():
+        if '%(' in k and (k % codes == clsName):
+            return v % codes
+    
+    # also try the various allowed combinations (in decreasing order)
+    for pattern in (lastName, '%(package_short)s'+lastName,
+                    '%(package)s'+lastName, '%(package_short)s%(name)s'
+                    '%(name)s', '%(fullname)s', ):
+        if pattern in renames:
+            resolved = renames[pattern] % codes
+            
+            #there could be various strategies for recovery
+            if resolved in alreadyRegistered:
+                continue
+            return resolved
+            
+    
+    # and if nothing succeeded, then always return the last name
+    return lastName
+        
+     
+
+def getSubstitutionCodes(elements):
+    markers = {
+        'clsname' : '.'.join(elements),
+        'fullname': ''.join(elements),
+        'package' : ''.join(elements[:-1]),
+        'package_short': ''.join(x[0] for x in elements[0:-1]),
+        'name': elements[-1],
+        'java_pkg': '.'.join(elements[:-1]),
+    }
+    return markers
+    
+def get_substitution_help(clsName):
+    codes = getSubstitutionCodes(clsName.split('.'))
+    return '''
+
+    You can also use substitution codes, examples:
+
+    --rename %(java_pkg)s%%(name)s=foo%%(name)s
+         # => foo%(name)s
+    --rename %%(java_pkg)s%(name)s=bar%%(name)s
+         # => bar%(name)s         
+    --rename %%(fullname)s=%%(package_short)%%(name)s
+         # => %(package_short)s%(name)s
+    --rename %%(package)s%%(name)s=%%(package_short)sXYZ  
+         # => %(package_short)sXYZ
+    --rename %%(fullname)s=py%%(name)s
+         # => py%(name)s
+        
+    codes:
+       %%(clsname)s = %(clsname)s
+       %%(java_pkg)s = %(java_pkg)s
+       %%(fullname)s = %(fullname)s
+       %%(package)s = %(package)s
+       %%(package_short)s = %(package_short)s
+       %%(name)s = %(name)s
+    ''' % codes
+    
 
 if __name__ == '__main__':
     jcc(sys.argv)

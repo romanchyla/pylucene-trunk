@@ -23,7 +23,7 @@ import org.apache.lucene.index.AtomicReaderContext;
  * @author Andi Vajda
  */
 
-public class PythonFieldComparator extends FieldComparator {
+public class PythonFieldComparator<T> extends FieldComparator<T> {
 
     private long pythonObject;
 
@@ -58,7 +58,8 @@ public class PythonFieldComparator extends FieldComparator {
     public native FieldComparator setNextReader(AtomicReaderContext context)
         throws IOException;
 
-    public native Comparable value(int slot);
-    public native int compareDocToValue(int doc, Object value) throws IOException;
-    
+    public native T value(int slot);
+
+    public native int compareDocToValue(int doc, T value)
+        throws IOException;
 }

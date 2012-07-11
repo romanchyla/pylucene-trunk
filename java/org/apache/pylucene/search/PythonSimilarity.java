@@ -75,22 +75,19 @@ public class PythonSimilarity extends Similarity {
 
     public native float coord(int overlap, int maxOverlap);
     public native float idf(long docFreq, long numDocs);
-    public native float computeNorm(FieldInvertState state);
+    public native float computeNorm(String fieldName, FieldInvertState state);
     public native float queryNorm(float sumOfSquaredWeights);
     public native float sloppyFreq(int distance);
     public native float tf(float freq);
     public native float scorePayload(int docId, String fieldName,
-                                     int start, int end, byte [] payload,
+                                     int start, int end, byte[] payload,
                                      int offset, int length);
 
-    // XX: add implementaions
-	public native void computeNorm(FieldInvertState state, Norm norm);
-	public native SimWeight computeWeight(float queryBoost, CollectionStatistics collectionStats, TermStatistics... termStats);
-	public native ExactSimScorer exactSimScorer(SimWeight weight,
-			AtomicReaderContext context) throws IOException;
-	public native SloppySimScorer sloppySimScorer(SimWeight weight,
-			AtomicReaderContext context) throws IOException;
-
-
-    
+    // XX: add implementations
+    public native void computeNorm(FieldInvertState state, Norm norm);
+    public native SimWeight computeWeight(float queryBoost, CollectionStatistics collectionStats, TermStatistics... termStats);
+    public native ExactSimScorer exactSimScorer(SimWeight weight, AtomicReaderContext context)
+        throws IOException;
+    public native SloppySimScorer sloppySimScorer(SimWeight weight, AtomicReaderContext context)
+        throws IOException;
 }

@@ -12,9 +12,9 @@
 #   limitations under the License.
 # ====================================================================
 
-from pylucene_testcase import PyLuceneTestCase
 from unittest import TestCase, main
 from lucene import *
+from PyLuceneTestCase import PyLuceneTestCase
 
 
 class TestBinaryDocument(PyLuceneTestCase):
@@ -32,7 +32,6 @@ class TestBinaryDocument(PyLuceneTestCase):
         ft.setStoreTermVectors(False)
         stringFldStored = Field("stringStored", self.binaryValStored, ft)
         
-        
         # couldn't find any combination with lucene4.0 where it would raise errors
         #try:
         #    # binary fields with store off are not allowed
@@ -47,25 +46,23 @@ class TestBinaryDocument(PyLuceneTestCase):
         doc.add(binaryFldStored)
         doc.add(stringFldStored)
         
-        
-
         # test for field count
         self.assertEqual(2, doc.fields.size())
     
         # add the doc to a ram index
         writer = self.getWriter(analyzer=StandardAnalyzer(Version.LUCENE_CURRENT))
         writer.addDocument(doc)
-        writer.close()
-    
+        writer.commit()
+        
         # open a reader and fetch the document
         reader = self.getReader()
-        docFromReader = reader.document(0) #segfault
+        docFromReader = reader.document(0)
         self.assert_(docFromReader is not None)
     
         # fetch the binary stored field and compare it's content with the
         # original one
         bytes = docFromReader.getBinaryValue("binaryStored")
-        binaryFldStoredTest = bytes.string_
+        binaryFldStoredTest = bytes.bytes.string_
         self.assertEqual(binaryFldStoredTest, self.binaryValStored)
         
         # fetch the string field and compare it's content with the original
@@ -73,12 +70,8 @@ class TestBinaryDocument(PyLuceneTestCase):
         stringFldStoredTest = docFromReader.get("stringStored")
         self.assertEqual(stringFldStoredTest, self.binaryValStored)
     
-        # delete the document from index
-        reader.deleteDocument(0)
-        self.assertEqual(0, reader.numDocs())
-    
+        writer.close()
         reader.close()
-        dir.close()
   
     def testCompressionTools(self):
 
@@ -91,14 +84,12 @@ class TestBinaryDocument(PyLuceneTestCase):
         doc.add(stringFldCompressed)
     
         # add the doc to a ram index
-        dir = RAMDirectory()
-        writer = IndexWriter(dir, StandardAnalyzer(Version.LUCENE_CURRENT),
-                             True, IndexWriter.MaxFieldLength.LIMITED)
+        writer = self.getWriter()
         writer.addDocument(doc)
-        writer.close()
+        writer.commit()
     
         # open a reader and fetch the document
-        reader = IndexReader.open(dir, False)
+        reader = self.getReader()
         docFromReader = reader.document(0)
         self.assert_(docFromReader is not None)
     
@@ -109,8 +100,8 @@ class TestBinaryDocument(PyLuceneTestCase):
         self.assertEqual(binaryFldCompressedTest, self.binaryValCompressed)
         self.assertEqual(CompressionTools.decompressString(docFromReader.getBinaryValue("stringCompressed")), self.binaryValCompressed)
 
+        writer.close()
         reader.close()
-        dir.close()
 
 
 if __name__ == '__main__':

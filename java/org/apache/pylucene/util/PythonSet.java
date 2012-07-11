@@ -58,12 +58,13 @@ public class PythonSet implements Set {
     public native boolean removeAll(Collection c);
     public native boolean retainAll(Collection c);
     public native int size();
+
     public native Object[] toArray();
     
     public Object[] toArray(Object[] a)
     {
         Object[] array = toArray();
-        
+
         if (a.length < array.length)
             a = (Object[]) Array.newInstance(a.getClass().getComponentType(),
                                              array.length);
