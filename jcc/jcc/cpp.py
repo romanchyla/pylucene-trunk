@@ -517,6 +517,8 @@ def jcc(args):
 
     if imports:
         if shared:
+            for import_ in imports:
+                loadClassNamesFromImportedModule(import_, renames)
             imports = dict((__import__(import_), set()) for import_ in imports)
         else:
             raise ValueError, "--shared must be used when using --import"
@@ -603,8 +605,11 @@ def jcc(args):
             if moduleName:
                 for cls in importset:
                     name = getPythonicClassName(cls.getName(), renames, pythonNames)
-                    if name in pythonNames:
-                        raise ValueError, ('Python class name \'%s\' already in use by: %s;\n use: --rename %s=<someNewName>' % 
+                    if name == 'SKIP':
+                        print 'skipping', cls
+                        continue
+                    elif name in pythonNames:
+                        raise ValueError, ('Python class name \'%s\' already in use by: %s;\n use: --rename %s=<someNewName> %s' % 
                             (name, pythonNames[name].getName(), cls.getName(), get_substitution_help(cls.getName())))
                     else:
                         pythonNames[name] = cls
@@ -618,11 +623,11 @@ def jcc(args):
                 classCount += 1
                 className = cls.getName()
                 names = className.split('.')
-                dir = os.path.join(cppdir, *names[:-1])
-                if not os.path.isdir(dir):
-                    os.makedirs(dir)
+                dir_ = os.path.join(cppdir, *names[:-1])
+                if not os.path.isdir(dir_):
+                    os.makedirs(dir_)
 
-                fileName = os.path.join(dir, names[-1])
+                fileName = os.path.join(dir_, names[-1])
                 out_h = file(fileName + '.h', "w")
                 line(out_h, 0, '#ifndef %s_H', '_'.join(names))
                 line(out_h, 0, '#define %s_H', '_'.join(names))
@@ -641,7 +646,10 @@ def jcc(args):
                                          declares, typeset)
                 if moduleName:
                     name = getPythonicClassName(className, renames, pythonNames)
-                    if name in pythonNames:
+                    if name == 'SKIP':
+                        print 'skipping', className
+                        continue
+                    elif name in pythonNames:
                         raise ValueError, ('Python class name \'%s\' already in use by: %s;\n use: --rename %s=<someNewName> %s' 
                             % (name, pythonNames[name].getName(), cls.getName(), get_substitution_help(className)))
                     else:
@@ -1268,7 +1276,21 @@ def get_substitution_help(clsName):
        %%(package_short)s = %(package_short)s
        %%(name)s = %(name)s
     ''' % codes
-    
+
+
+def loadClassNamesFromImportedModule(module_name, renames):
+    import tempfile
+    temp_file = os.path.join(tempfile.gettempdir(), 'jcc-renames-%s.tmp' % module_name)
+    os.system("%s -c \"import %s as mod;mod.initVM(mod.CLASSPATH);open('%s', 'w').write('\\n'.join(['%%s\t%%s' %% (x.class_.getName(), x.class_.getSimpleName()) for x in filter(lambda x: hasattr(x, 'class_'), mod.__dict__.values())]))\""
+              % (sys.executable, module_name, temp_file))
+    fi = open(temp_file, 'r')
+    for line in fi:
+        cls, name = line.strip().split('\t')
+        if (cls in renames):
+            raise Exception("Error while importing module %s. The class name %s is already reserved for %s" % (module_name, name, cls))
+        else:
+            renames[cls] = name
+    fi.close()
 
 if __name__ == '__main__':
     jcc(sys.argv)
