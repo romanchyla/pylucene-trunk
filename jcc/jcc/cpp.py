@@ -517,8 +517,7 @@ def jcc(args):
 
     if imports:
         if shared:
-            for import_ in imports:
-                loadClassNamesFromImportedModule(import_, renames)
+            loadClassNamesFromImportedModule(imports, renames)
             imports = dict((__import__(import_), set()) for import_ in imports)
         else:
             raise ValueError, "--shared must be used when using --import"
@@ -606,7 +605,7 @@ def jcc(args):
                 for cls in importset:
                     name = getPythonicClassName(cls.getName(), renames, pythonNames)
                     if name == 'SKIP':
-                        print 'skipping', cls
+                        pythonNames[name] = cls
                         continue
                     elif name in pythonNames:
                         raise ValueError, ('Python class name \'%s\' already in use by: %s;\n use: --rename %s=<someNewName> %s' % 
@@ -647,7 +646,7 @@ def jcc(args):
                 if moduleName:
                     name = getPythonicClassName(className, renames, pythonNames)
                     if name == 'SKIP':
-                        print 'skipping', className
+                        print 'skipping', cls
                         continue
                     elif name in pythonNames:
                         raise ValueError, ('Python class name \'%s\' already in use by: %s;\n use: --rename %s=<someNewName> %s' 
@@ -1223,7 +1222,7 @@ def getPythonicClassName(clsName, renames, alreadyRegistered):
             return v % codes
     
     # also try the various allowed combinations (in decreasing order)
-    for pattern in (lastName, '%(package_short)s'+lastName,
+    for pattern in (lastName, '#'+clsName, '%(package_short)s'+lastName,
                     '%(package)s'+lastName, '%(package_short)s%(name)s'
                     '%(name)s', '%(fullname)s', ):
         if pattern in renames:
@@ -1278,18 +1277,29 @@ def get_substitution_help(clsName):
     ''' % codes
 
 
-def loadClassNamesFromImportedModule(module_name, renames):
+def loadClassNamesFromImportedModule(modules, renames):
     import tempfile
-    temp_file = os.path.join(tempfile.gettempdir(), 'jcc-renames-%s.tmp' % module_name)
-    os.system("%s -c \"import %s as mod;mod.initVM(mod.CLASSPATH);open('%s', 'w').write('\\n'.join(['%%s\t%%s' %% (x.class_.getName(), x.class_.getSimpleName()) for x in filter(lambda x: hasattr(x, 'class_'), mod.__dict__.values())]))\""
-              % (sys.executable, module_name, temp_file))
+    
+    temp_file = os.path.join(tempfile.gettempdir(), 'jcc-renames-%s.tmp' % '-'.join(modules))
+    imports = ';'.join(['import %s;mods.append(%s);cp.append(%s.CLASSPATH)' % (x,x,x) for x in modules])
+    updates = ';'.join(["cls.update(['%%s\\t%%s' %% (x.class_.getName(), x.class_.getSimpleName()) for x in filter(lambda x: hasattr(x, 'class_'), %s.__dict__.values())])" % x for x in modules])
+    cmd = """%(executable)s -c \"import os,sys;sys.path=%(syspath)s;
+    cp=[];mods=[];cls=set();%(imports)s;
+    mods[0].initVM(os.pathsep.join(cp));
+    %(updates)s;
+    open('%(tmpfile)s', 'w').write('\\n'.join(list(cls)))\"
+    """  % {'executable': sys.executable, 'syspath':sys.path, 'imports':imports, 'tmpfile':temp_file,
+            'updates': updates}
+    print cmd
+    cmd = ' '.join(cmd.split())
+    os.system(cmd)  
     fi = open(temp_file, 'r')
     for line in fi:
         cls, name = line.strip().split('\t')
         if (cls in renames):
             raise Exception("Error while importing module %s. The class name %s is already reserved for %s" % (module_name, name, cls))
         else:
-            renames[cls] = name
+            renames['#%s' % cls] = 'SKIP'
     fi.close()
 
 if __name__ == '__main__':
