@@ -604,14 +604,14 @@ def jcc(args):
             if moduleName:
                 for cls in importset:
                     name = getPythonicClassName(cls.getName(), renames, pythonNames)
-                    if name == 'SKIP':
-                        pythonNames[name] = cls
-                        continue
-                    elif name in pythonNames:
-                        raise ValueError, ('Python class name \'%s\' already in use by: %s;\n use: --rename %s=<someNewName> %s' % 
-                            (name, pythonNames[name].getName(), cls.getName(), get_substitution_help(cls.getName())))
-                    else:
-                        pythonNames[name] = cls
+                    #if name == 'SKIP':
+                    #    pythonNames[name] = cls
+                    #    continue
+                    #elif name in pythonNames:
+                    #    raise ValueError, ('Python class name \'%s\' already in use by: %s;\n use: --rename %s=<someNewName> %s' % 
+                    #        (name, pythonNames[name].getName(), cls.getName(), get_substitution_help(cls.getName())))
+                    #else:
+                    #    pythonNames[name] = cls
 
         todo = typeset - done
         if allInOne and wrapperFiles > 1:
